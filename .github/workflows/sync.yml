@@ -28,7 +28,7 @@ jobs:
           }
         write-mode: overwrite
 
-    - run: withings-sync -f 2023-01-01
+    - run: withings-sync
       env:
         GARMIN_USERNAME: ${{ secrets.GARMIN_USERNAME }}
         GARMIN_PASSWORD: ${{ secrets.GARMIN_PASSWORD }}
