@@ -43,27 +43,31 @@ jobs:
         AUTH_CODE=$(grep "authentification_code" $SECRETS_FILE | cut -d '"' -f4)
         REFRESH_TOKEN=$(grep "refresh_token" $SECRETS_FILE | cut -d '"' -f4)
         USERID=$(grep "userid" $SECRETS_FILE | grep -o '[0-9]*')
-
+        echo "ACCESS_TOKEN=$ACCESS_TOKEN" >> $GITHUB_ENV
+        echo "AUTH_CODE=$AUTH_CODE" >> $GITHUB_ENV
+        echo "REFRESH_TOKEN=$REFRESH_TOKEN" >> $GITHUB_ENV
+        echo "USERID=$USERID" >> $GITHUB_ENV
+        
     - name: Store updated refresh token
       uses: action-pack/set-secret@v1
       with:
         name: 'WITHINGS_REFRESH_TOKEN'
-        value: "$REFRESH_TOKEN"
+        value: ${{ env.REFRESH_TOKEN }}
         repository: cillin89/withings-sync
         token: ${{ secrets.MY_TOKEN }}
     
-    - name: Store updated refresh token
+    - name: Store updated authentication token
       uses: action-pack/set-secret@v1
       with:
         name: 'WITHINGS_AUTHENTICATION_TOKEN'
-        value: "$AUTH_CODE"
+        value: ${{ env.AUTH_CODE }}
         repository: cillin89/withings-sync
         token: ${{ secrets.MY_TOKEN }}
     
-    - name: Store updated refresh token
+    - name: Store updated access token
       uses: action-pack/set-secret@v1
       with:
         name: 'WITHINGS_ACCESS_TOKEN'
-        value: "$ACCESS_TOKEN"
+        value: ${{ env.ACCESS_TOKEN }}
         repository: cillin89/withings-sync
         token: ${{ secrets.MY_TOKEN }}
