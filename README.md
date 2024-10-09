@@ -252,7 +252,7 @@ This will run the job every 3 hours (at a random minute) and writing the output 
 
 Release works via the GitHub [Draft a new Release](https://github.com/jaroslawhartman/withings-sync/releases/new) 
 function.
-Keep in mind to bump the `version` key in `setup.py`.
+The `version` key in `setup.py` will be bumped automatically (Version will be written to .VERSION file). Keep in mind to update the `.VERSION` if a major release is done.
 
 ### Docker Image
 
