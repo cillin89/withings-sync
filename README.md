@@ -259,7 +259,7 @@ The `version` key in `setup.py` will be bumped automatically (Version will be wr
 An image is created magically by GitHub Action and published 
 to [ghcr](https://github.com/jaroslawhartman/withings-sync/pkgs/container/withings-sync).
 
-### pypi
+### Manual release: pypi
 
 You'll find a script to create and upload a release to pypi here `contrib/do_release.sh`.
 It requires [twine](https://pypi.org/project/twine/).
