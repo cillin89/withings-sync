@@ -23,6 +23,19 @@ jobs:
       - name: Install dependencies
         run: uv sync --frozen
 
+      - name: Write Withings credentials
+        run: |
+          jq -n \
+            --arg access_token "$WITHINGS_ACCESS_TOKEN" \
+            --arg refresh_token "$WITHINGS_REFRESH_TOKEN" \
+            --arg userid "$WITHINGS_USERID" \
+            '{access_token: $access_token, refresh_token: $refresh_token, userid: $userid}' \
+            > "$HOME/.withings_user.json"
+        env:
+          WITHINGS_ACCESS_TOKEN: ${{ secrets.WITHINGS_ACCESS_TOKEN }}
+          WITHINGS_REFRESH_TOKEN: ${{ secrets.WITHINGS_REFRESH_TOKEN }}
+          WITHINGS_USERID: ${{ secrets.WITHINGS_USERID }}
+
       - name: Run Withings Sync
         env:
           WITHINGS_ACCESS_TOKEN: ${{ secrets.WITHINGS_ACCESS_TOKEN }}
