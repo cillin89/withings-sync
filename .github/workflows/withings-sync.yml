@@ -1,0 +1,83 @@
+---
+name: Withings Sync
+on:
+  schedule:
+    - cron: '30 5-9 * * *'
+  workflow_dispatch:
+jobs:
+  sync:
+    name: Sync Withings to Garmin
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Install withings-sync
+        run: pip install withings-sync
+
+      - name: Restore Withings session
+        run: |
+          jq -n \
+            --arg access_token "$WITHINGS_ACCESS_TOKEN" \
+            --arg authentification_code "$WITHINGS_AUTH_CODE" \
+            --arg refresh_token "$WITHINGS_REFRESH_TOKEN" \
+            --argjson userid "$WITHINGS_USERID" \
+            '{access_token: $access_token, authentification_code: $authentification_code, refresh_token: $refresh_token, userid: $userid}' \
+            > "$HOME/.withings_user.json"
+          echo "Withings session file written"
+        env:
+          WITHINGS_ACCESS_TOKEN: ${{ secrets.WITHINGS_ACCESS_TOKEN }}
+          WITHINGS_AUTH_CODE: ${{ secrets.WITHINGS_AUTH_CODE }}
+          WITHINGS_REFRESH_TOKEN: ${{ secrets.WITHINGS_REFRESH_TOKEN }}
+          WITHINGS_USERID: ${{ secrets.WITHINGS_USERID }}
+
+      - name: Restore Garmin session
+        if: env.GARMIN_DI_TOKEN != ''
+        env:
+          GARMIN_DI_TOKEN: ${{ secrets.GARMIN_DI_TOKEN }}
+          GARMIN_DI_REFRESH_TOKEN: ${{ secrets.GARMIN_DI_REFRESH_TOKEN }}
+          GARMIN_DI_CLIENT_ID: ${{ secrets.GARMIN_DI_CLIENT_ID }}
+        run: |
+          jq -n \
+            --arg di_token "$GARMIN_DI_TOKEN" \
+            --arg di_refresh_token "$GARMIN_DI_REFRESH_TOKEN" \
+            --arg di_client_id "$GARMIN_DI_CLIENT_ID" \
+            '{di_token: $di_token, di_refresh_token: $di_refresh_token, di_client_id: $di_client_id}' \
+            > "$HOME/.garmin_session.json"
+          echo "Garmin session file restored"
+
+      - name: Run Withings Sync
+        env:
+          GARMIN_USERNAME: ${{ secrets.GARMIN_USERNAME }}
+          GARMIN_PASSWORD: ${{ secrets.GARMIN_PASSWORD }}
+        run: withings-sync --verbose
+
+      - name: Persist refreshed tokens
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.REPO_PAT }}
+        run: |
+          # Update Withings tokens
+          if [ -f "$HOME/.withings_user.json" ]; then
+            ACCESS=$(jq -r '.access_token // empty' "$HOME/.withings_user.json")
+            REFRESH=$(jq -r '.refresh_token // empty' "$HOME/.withings_user.json")
+            AUTH_CODE=$(jq -r '.authentification_code // empty' "$HOME/.withings_user.json")
+            [ -n "$ACCESS" ]    && echo "$ACCESS"    | gh secret set WITHINGS_ACCESS_TOKEN
+            [ -n "$REFRESH" ]   && echo "$REFRESH"   | gh secret set WITHINGS_REFRESH_TOKEN
+            [ -n "$AUTH_CODE" ] && echo "$AUTH_CODE" | gh secret set WITHINGS_AUTH_CODE
+            echo "Updated Withings tokens"
+          fi
+
+          # Update Garmin session
+          if [ -f "$HOME/.garmin_session.json" ]; then
+            DI_TOKEN=$(jq -r '.di_token // empty' "$HOME/.garmin_session.json")
+            DI_REFRESH=$(jq -r '.di_refresh_token // empty' "$HOME/.garmin_session.json")
+            [ -n "$DI_TOKEN" ]   && echo "$DI_TOKEN"   | gh secret set GARMIN_DI_TOKEN
+            [ -n "$DI_REFRESH" ] && echo "$DI_REFRESH" | gh secret set GARMIN_DI_REFRESH_TOKEN
+            echo "Updated Garmin session tokens"
+          fi
